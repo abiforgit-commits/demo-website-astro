@@ -1,0 +1,24 @@
+---
+type Props = { text?: string };
+
+const { text = "We Give Unparalleled Flexibility" } = Astro.props;
+const sep = "<!-- -->"; // text-node split React writes between `{text}` and "." (see Footer.astro)
+---
+
+<section class="overflow-hidden bg-royal py-5">
+  <p class="sr-only">{text}<Fragment set:html={sep} />.</p>
+  <div aria-hidden="true" class="animate-marquee flex w-max">
+    {[0, 1].map((group) => (
+      <ul class="flex shrink-0 items-center">
+        {[0, 1, 2, 3].map((n) => (
+          <li
+            class="flex items-center gap-6 px-6 font-display text-xl font-bold text-white md:text-3xl"
+          >
+            <span class="text-brand">✱</span>
+            {text}
+          </li>
+        ))}
+      </ul>
+    ))}
+  </div>
+</section>

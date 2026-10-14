@@ -1,0 +1,231 @@
+---
+const field =
+  "w-full border-0 border-b border-ink bg-transparent px-0 py-3 text-sm text-ink placeholder:text-ink focus:border-b-2 focus:outline-none";
+---
+
+<form class="mt-8 space-y-6">
+  <div class="grid gap-6 sm:grid-cols-2">
+    <div>
+      <label for="name" class="sr-only">Full name</label>
+      <input id="name" name="name" placeholder="Full name*" required minlength="2" maxlength="120" class={field} />
+    </div>
+    <div>
+      <label for="email" class="sr-only">Email address</label>
+      <input id="email" name="email" type="email" placeholder="Email address*" required maxlength="190" class={field} />
+    </div>
+  </div>
+
+  <div>
+    <label for="phone" class="sr-only">Phone (optional)</label>
+    <input id="phone" name="phone" type="tel" placeholder="Phone (optional)" maxlength="30" class={field} />
+  </div>
+
+  <div>
+    <label for="message" class="sr-only">How can we help you</label>
+    <textarea id="message" name="message" placeholder="How can we help you?*" required minlength="10" maxlength="3000" rows="3" class={`${field} resize-none`}></textarea>
+  </div>
+
+  <div id="cf-turnstile"></div>
+
+  <button
+    type="submit"
+    class="bg-ink px-8 py-4 text-[11px] font-bold uppercase tracking-wider text-white transition-colors hover:bg-white hover:text-ink disabled:opacity-50"
+  >Send message</button>
+</form>
+
+<script>
+  // Vanilla port of ContactForm.tsx + @marsidev/react-turnstile: same script
+  // URL/id, same widget options, same form states and messages.
+  type Status = "idle" | "sending" | "done" | "error";
+
+  type TurnstileApi = {
+    render: (el: HTMLElement, options: Record<string, unknown>) => string | undefined;
+    remove: (widgetId: string) => void;
+  };
+  type TurnstileWindow = Window & {
+    turnstile?: TurnstileApi;
+    onloadTurnstileCallback?: () => void;
+  };
+
+  const SCRIPT_URL = "https://challenges.cloudflare.com/turnstile/v0/api.js";
+  const SCRIPT_ID = "cf-turnstile-script";
+  const ONLOAD_NAME = "onloadTurnstileCallback";
+  const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!;
+
+  const w = window as TurnstileWindow;
+  let ready: Promise<void> | undefined;
+
+  // Next.js (with cacheComponents) keeps the 3 most recently visited routes
+  // alive, hidden, so the form keeps its input and status when the visitor
+  // leaves /contact and comes back while it is still among those 3 routes.
+  const KEPT_ROUTES = 3;
+  const FIELDS = ["name", "email", "phone", "message"] as const;
+  type SavedForm = { values: string[]; status: Status; errorMsg: string; token: string };
+  const recentRoutes: string[] = [];
+  let saved: { path: string; form: SavedForm } | undefined;
+
+  function trackRoute(path: string) {
+    const i = recentRoutes.indexOf(path);
+    if (i >= 0) recentRoutes.splice(i, 1);
+    recentRoutes.unshift(path);
+    recentRoutes.length = Math.min(recentRoutes.length, KEPT_ROUTES);
+    if (saved && !recentRoutes.includes(saved.path)) saved = undefined;
+  }
+
+  function loadTurnstile(): Promise<void> {
+    if (w.turnstile) return Promise.resolve();
+    ready ??= new Promise<void>((resolve) => {
+      w[ONLOAD_NAME] = () => {
+        resolve();
+        delete w[ONLOAD_NAME];
+      };
+      if (document.getElementById(SCRIPT_ID)) return;
+      const script = document.createElement("script");
+      script.id = SCRIPT_ID;
+      script.src = `${SCRIPT_URL}?onload=${ONLOAD_NAME}&render=explicit`;
+      script.defer = true;
+      script.async = true;
+      document.head.appendChild(script);
+    });
+    return ready;
+  }
+
+  function setupContactForm() {
+    const container = document.getElementById("cf-turnstile");
+    const form = container?.closest("form");
+    if (!container || !form) return;
+
+    const button = form.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+    const fields = FIELDS.map((id) => form.querySelector<HTMLInputElement | HTMLTextAreaElement>(`#${id}`)!);
+    const path = location.pathname;
+    const restored = saved?.path === path ? saved.form : undefined;
+    const state: SavedForm = restored ?? { values: [], status: "idle", errorMsg: "", token: "" };
+    restored?.values.forEach((value, i) => (fields[i].value = value));
+    let widgetId: string | undefined;
+    let mounted = true;
+
+    const noop = () => {};
+
+    loadTurnstile().then(() => {
+      if (!mounted || !w.turnstile) return;
+      try {
+        widgetId = w.turnstile.render(container, {
+          sitekey: SITE_KEY,
+          theme: "light",
+          language: "auto",
+          retry: "auto",
+          "retry-interval": 8000,
+          "refresh-expired": "auto",
+          "refresh-timeout": "auto",
+          execution: "render",
+          appearance: "always",
+          "feedback-enabled": true,
+          "offlabel-show-privacy": true,
+          "offlabel-show-help": true,
+          callback: (t: string) => {
+            state.token = t;
+          },
+          "error-callback": noop,
+          "expired-callback": () => {
+            state.token = "";
+          },
+          "before-interactive-callback": noop,
+          "after-interactive-callback": noop,
+          "unsupported-callback": noop,
+          "timeout-callback": noop,
+        });
+      } catch (e) {
+        console.error(e);
+      }
+    });
+
+    const removeWidget = () => {
+      mounted = false;
+      if (widgetId && w.turnstile) w.turnstile.remove(widgetId);
+      widgetId = undefined;
+    };
+    document.addEventListener(
+      "astro:before-swap",
+      () => {
+        state.values = fields.map((f) => f.value);
+        saved = { path, form: state };
+        removeWidget();
+      },
+      { once: true }
+    );
+
+    function render() {
+      const { status, errorMsg } = state;
+      if (status === "done") {
+        removeWidget();
+        const done = document.createElement("p");
+        done.setAttribute("role", "status");
+        done.className = "bg-ink p-6 text-sm text-brand";
+        done.textContent = "Thanks! Your message has been sent. We’ll get back to you soon.";
+        form!.replaceWith(done);
+        return;
+      }
+
+      let alert = form!.querySelector<HTMLParagraphElement>('p[role="alert"]');
+      if (status === "error") {
+        if (!alert) {
+          alert = document.createElement("p");
+          alert.setAttribute("role", "alert");
+          alert.className = "text-sm font-semibold text-red-800";
+          button.before(alert);
+        }
+        alert.textContent = errorMsg;
+      } else {
+        alert?.remove();
+      }
+
+      button.disabled = status === "sending";
+      button.textContent = status === "sending" ? "Sending..." : "Send message";
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!state.token) {
+        state.errorMsg = "Please complete the spam check.";
+        state.status = "error";
+        render();
+        return;
+      }
+
+      const data = new FormData(form);
+      state.status = "sending";
+      state.errorMsg = "";
+      render();
+
+      try {
+        const res = await fetch("/api/contact", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: data.get("name"),
+            email: data.get("email"),
+            phone: data.get("phone"),
+            message: data.get("message"),
+            token: state.token,
+          }),
+        });
+        const json = await res.json();
+        if (!res.ok || !json.ok) throw new Error(json.error ?? "Something went wrong");
+        form.reset();
+        state.status = "done";
+        render();
+      } catch (err) {
+        state.errorMsg = err instanceof Error ? err.message : "Something went wrong";
+        state.status = "error";
+        render();
+      }
+    });
+
+    if (restored) render();
+  }
+
+  document.addEventListener("astro:page-load", () => {
+    trackRoute(location.pathname);
+    setupContactForm();
+  });
+</script>

@@ -1,0 +1,26 @@
+---
+// Mirrors next/image with `fill` + `unoptimized` (the SVG placeholder path in
+// the Next.js app): a plain <img> with Next's fill style and no srcset/sizes.
+type Props = {
+  src: string;
+  alt: string;
+  fill?: boolean;
+  priority?: boolean;
+  sizes?: string;
+  class?: string;
+};
+
+const { src, alt, priority = false, class: className } = Astro.props;
+const fillStyle =
+  "position:absolute;height:100%;width:100%;left:0;top:0;right:0;bottom:0;color:transparent";
+---
+
+<img
+  alt={alt}
+  loading={priority ? undefined : "lazy"}
+  decoding="async"
+  data-nimg="fill"
+  class={className}
+  style={fillStyle}
+  src={src}
+/>

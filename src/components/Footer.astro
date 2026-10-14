@@ -1,0 +1,77 @@
+---
+import { site } from "@/lib/site";
+import { isLightPage } from "@/lib/theme";
+
+const light = isLightPage(Astro.url.pathname);
+
+// React writes `About {site.name}` as two text nodes ("About <!-- -->Frisk").
+// Chrome shapes text per node, so the split changes glyph positions slightly;
+// `sep` reproduces it to keep the rendering pixel-identical.
+const sep = "<!-- -->";
+
+const wrap = light ? "bg-[#f5f4f2] text-ink" : "bg-ink text-white";
+const muted = light ? "text-ink/60" : "text-white/60";
+const hover = light ? "hover:text-ink" : "hover:text-brand";
+const rule = light ? "border-ink/15" : "border-white/10";
+const circle = light
+  ? "border-ink/30 hover:bg-ink hover:text-white"
+  : "border-white/30 hover:bg-brand hover:text-ink";
+---
+
+<footer class={wrap}>
+  <div class="mx-auto max-w-7xl px-6 py-16 lg:px-10">
+    <div class="grid gap-12 md:grid-cols-3">
+      <div>
+        <h2 class="font-display text-sm font-bold">About <Fragment set:html={sep} />{site.name}</h2>
+        <p class={`mt-5 max-w-sm text-sm leading-relaxed ${muted}`}>{site.description}</p>
+      </div>
+
+      <nav aria-label="Footer">
+        <h2 class="font-display text-sm font-bold">Links</h2>
+        <ul class={`mt-5 space-y-3 text-sm ${muted}`}>
+          {site.nav.map((l) => (
+            <li>
+              <a href={l.href} class={`transition-colors ${hover}`}>
+                {l.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+
+      <div>
+        <h2 class="font-display text-sm font-bold">Get in touch</h2>
+        <ul class={`mt-5 space-y-3 text-sm ${muted}`}>
+          <li>
+            <a href={`mailto:${site.email}`} class={`transition-colors ${hover}`}>
+              {site.email}
+            </a>
+          </li>
+          <li>
+            <a href={site.phoneHref} class={`transition-colors ${hover}`}>
+              {site.phone}
+            </a>
+          </li>
+          <li>
+            <address class="not-italic">{site.address}</address>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class={`mt-16 flex items-center justify-between border-t pt-8 ${rule}`}>
+      <p class={`text-xs font-semibold ${muted}`}>
+        © 2026 <Fragment set:html={sep} />{site.name}<Fragment set:html={sep} />. All rights reserved.
+      </p>
+      <a
+        href="#top"
+        aria-label="Back to top"
+        class={`flex h-10 w-10 items-center justify-center rounded-full border transition-colors ${circle}`}
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M12 19V5M5 12l7-7 7 7" />
+        </svg>
+      </a>
+    </div>
+  </div>
+</footer>

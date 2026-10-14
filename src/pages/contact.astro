@@ -1,0 +1,110 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import ImageHero from "../components/ImageHero.astro";
+import ContactForm from "../components/ContactForm.astro";
+import Ticker from "../components/Ticker.astro";
+import { site } from "@/lib/site";
+
+const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(site.mapQuery)}`;
+const sep = "<!-- -->"; // text-node split React writes after `{c.label}` (see Footer.astro)
+const mapEmbed =`https://www.google.com/maps?q=${encodeURIComponent(site.mapQuery)}&z=12&output=embed`;
+
+const cards = [
+  {
+    title: "Headquarters",
+    text: site.address,
+    label: "Get direction",
+    href: mapsUrl,
+    external: true,
+    icon: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z",
+  },
+  {
+    title: "Email Address",
+    text: site.email,
+    label: "Send message",
+    href: `mailto:${site.email}`,
+    external: false,
+    icon: "M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z",
+  },
+  {
+    title: "Phone Number",
+    text: site.phone,
+    label: "Call anytime",
+    href: site.phoneHref,
+    external: false,
+    icon: "M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z",
+  },
+];
+---
+
+<BaseLayout
+  title="Contact Us"
+  description="Get in touch with us. Find our office location, email, and phone number, or send a message and we will reply as soon as we can."
+  canonical="/contact"
+>
+  <div class="bg-white text-ink">
+    <ImageHero
+      title="Contact"
+      alt="Two people shaking hands after a meeting"
+      tint="hue-rotate-[10deg]"
+    />
+
+    {/* Contact cards */}
+    <section aria-label="Contact details" class="py-16 md:py-24">
+      <div class="mx-auto max-w-7xl px-6 lg:px-10">
+        <ul class="grid gap-5 md:grid-cols-3">
+          {cards.map((c) => (
+            <li class="bg-[#f5f4f2] p-8">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d={c.icon} />
+              </svg>
+              <h2 class="mt-14 font-display text-xl font-bold">{c.title}</h2>
+              <p class="mt-4 text-sm leading-relaxed text-ink/70">{c.text}</p>
+              <a
+                href={c.href}
+                {...(c.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                class="mt-8 inline-flex items-center gap-2 border-b-2 border-ink pb-0.5 text-[11px] font-bold uppercase tracking-wider"
+              >
+                {c.label}<Fragment set:html={sep} /> <span aria-hidden="true">↗</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+
+    {/* Map + form */}
+    <section aria-labelledby="project-heading" class="relative mb-0">
+      <div aria-hidden="true" class="absolute inset-x-0 bottom-0 top-0 bg-brand md:top-12"></div>
+      <div class="relative grid md:grid-cols-2">
+        <div class="md:pb-16">
+          <div class="relative h-[320px] md:h-full md:min-h-[520px]">
+            <iframe
+              title={`Map showing our office in ${site.address}`}
+              src={mapEmbed}
+              loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade"
+              class="absolute inset-0 h-full w-full border-0"
+            ></iframe>
+          </div>
+        </div>
+
+        <div class="px-6 py-14 md:px-14 md:py-20 lg:px-20">
+          <h2 id="project-heading" class="font-display text-3xl font-bold leading-tight md:text-5xl">
+            Have Any Project
+            <br />
+            on Your Mind?
+          </h2>
+          <p class="mt-5 text-sm">
+            Great! We’re excited to hear from you, and let’s start something.
+          </p>
+          <ContactForm />
+        </div>
+      </div>
+    </section>
+
+    <div class="mt-16 md:mt-24">
+      <Ticker />
+    </div>
+  </div>
+</BaseLayout>

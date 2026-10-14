@@ -1,0 +1,31 @@
+{
+  "name": "demo-website-astro",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "check": "astro check",
+    "astro": "astro",
+    "compare": "node compare/run.mjs"
+  },
+  "dependencies": {
+    "@astrojs/vercel": "11.0.11",
+    "@vercel/functions": "3.9.9",
+    "astro": "7.3.5",
+    "mysql2": "3.24.5",
+    "resend": "6.32.1",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.10",
+    "@tailwindcss/vite": "4.3.3",
+    "@types/node": "20.19.43",
+    "pixelmatch": "7.2.0",
+    "playwright": "1.63.0",
+    "pngjs": "7.0.0",
+    "tailwindcss": "4.3.3",
+    "typescript": "5.9.3"
+  }
+}

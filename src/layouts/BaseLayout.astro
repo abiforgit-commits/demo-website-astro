@@ -1,0 +1,83 @@
+---
+import "../styles/global.css";
+import { Font } from "astro:assets";
+import { ClientRouter } from "astro:transitions";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import { site } from "@/lib/site";
+
+type Props = {
+  /** Page title; `%s | Frisk` template applies unless `absoluteTitle` is set. */
+  title?: string;
+  absoluteTitle?: boolean;
+  description?: string;
+  /** Canonical path, e.g. "/about". Omitted means no canonical tag. */
+  canonical?: string;
+  noindex?: boolean;
+};
+
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
+const defaultTitle = `${site.name} | ${site.tagline}`;
+const { title, absoluteTitle = false, description = site.description, canonical, noindex = false } =
+  Astro.props;
+const fullTitle = title === undefined ? defaultTitle : absoluteTitle ? title : `${title} | ${site.name}`;
+
+// Next.js metadataBase resolution: absolute URL, root path without trailing slash.
+const absolute = (path: string) => {
+  const url = new URL(path, siteUrl).href;
+  return path === "/" ? url.replace(/\/$/, "") : url;
+};
+const ogImage = absolute("/og-image.png");
+
+const orgJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: site.name,
+  url: siteUrl,
+  email: site.email,
+  telephone: site.phone,
+  address: site.address,
+};
+---
+
+<html lang="en" transition:animate="none">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {noindex && <meta name="robots" content="noindex" />}
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    {canonical && <link rel="canonical" href={absolute(canonical)} />}
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" type="image/x-icon" />
+    <Font cssVariable="--astro-font-inter" preload={[{ subset: "latin" }]} />
+    <Font cssVariable="--astro-font-unbounded" preload={[{ subset: "latin" }]} />
+    <ClientRouter fallback="swap" />
+    <style is:global>
+      /* next/font puts --font-inter/--font-unbounded on <body> (via a class),
+         not on :root. Mirror that exactly so the Tailwind theme in global.css
+         resolves the same way it does in the Next.js app. */
+      body {
+        --font-inter: var(--astro-font-inter);
+        --font-unbounded: var(--astro-font-unbounded);
+      }
+    </style>
+  </head>
+  <body class="font-sans antialiased">
+    <script type="application/ld+json" set:html={JSON.stringify(orgJsonLd)} />
+    <div id="top" class="flex min-h-screen flex-col">
+      <Header />
+      <main class="flex-1"><slot /></main>
+      <Footer />
+    </div>
+  </body>
+</html>

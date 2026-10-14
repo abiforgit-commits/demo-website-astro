@@ -1,0 +1,118 @@
+---
+import { site } from "@/lib/site";
+import { isLightPage } from "@/lib/theme";
+
+const pathname = Astro.url.pathname;
+const light = isLightPage(pathname);
+
+const linkClass = (href: string) => {
+  const active = pathname === href;
+  const base = "text-xs font-semibold uppercase tracking-wider transition-colors";
+  if (light) {
+    return `${base} ${
+      active
+        ? "text-ink underline decoration-ink decoration-2 underline-offset-8"
+        : "text-ink/70 hover:text-ink"
+    }`;
+  }
+  return `${base} hover:text-brand ${active ? "text-brand" : "text-white"}`;
+};
+---
+
+<header
+  class={
+    light ? "relative z-50 bg-white" : "absolute inset-x-0 top-0 z-50"
+  }
+>
+  <div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 lg:px-10">
+    <a
+      href="/"
+      class={`font-display text-xl font-bold ${light ? "text-ink" : "text-white"}`}
+    >
+      {site.name}
+    </a>
+
+    <nav aria-label="Main" class="hidden md:block">
+      <ul class="flex items-center gap-10">
+        {site.nav.map((l) => (
+          <li>
+            <a
+              href={l.href}
+              class={linkClass(l.href)}
+              aria-current={pathname === l.href ? "page" : undefined}
+            >
+              {l.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+
+    <button
+      type="button"
+      class={`inline-flex h-10 w-10 items-center justify-center md:hidden ${
+        light ? "text-ink" : "text-white"
+      }`}
+      aria-expanded="false"
+      aria-controls="mobile-menu"
+      aria-label="Open menu"
+    >
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M4 7h16M4 12h16M4 17h16" />
+      </svg>
+    </button>
+  </div>
+
+  <nav
+    id="mobile-menu"
+    aria-label="Mobile"
+    hidden
+    class={`px-6 pb-6 md:hidden ${
+      light
+        ? "border-t border-ink/10 bg-white"
+        : "border-t border-white/10 bg-ink/95 backdrop-blur"
+    }`}
+  >
+    <ul class="flex flex-col">
+      {site.nav.map((l) => (
+        <li class={`border-b ${light ? "border-ink/10" : "border-white/10"}`}>
+          <a
+            href={l.href}
+            class={`block py-4 ${linkClass(l.href)}`}
+            aria-current={pathname === l.href ? "page" : undefined}
+          >
+            {l.label}
+          </a>
+        </li>
+      ))}
+    </ul>
+  </nav>
+</header>
+
+<script>
+  // Same open/close behaviour as the React state in the Next.js Header.
+  const OPEN_ICON = "M4 7h16M4 12h16M4 17h16";
+  const CLOSE_ICON = "M6 6l12 12M18 6L6 18";
+
+  function setupHeader() {
+    const button = document.querySelector<HTMLButtonElement>('button[aria-controls="mobile-menu"]');
+    const menu = document.getElementById("mobile-menu");
+    if (!button || !menu) return;
+    const icon = button.querySelector("path");
+
+    const setOpen = (open: boolean) => {
+      menu.hidden = !open;
+      button.setAttribute("aria-expanded", String(open));
+      button.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+      icon?.setAttribute("d", open ? CLOSE_ICON : OPEN_ICON);
+    };
+
+    button.addEventListener("click", () => setOpen(menu.hidden));
+    // The logo and the mobile links close the menu, like their onClick handlers.
+    const header = button.closest("header");
+    header?.querySelector(":scope > div > a")?.addEventListener("click", () => setOpen(false));
+    menu.querySelectorAll("a").forEach((a) => a.addEventListener("click", () => setOpen(false)));
+  }
+
+  document.addEventListener("astro:page-load", setupHeader);
+</script>

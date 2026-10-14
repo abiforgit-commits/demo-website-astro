@@ -1,0 +1,24 @@
+# build output
+dist/
+.vercel/
+
+# generated types
+.astro/
+
+# dependencies
+node_modules/
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# env files (same rule as the Next.js app)
+.env*
+
+# macOS
+.DS_Store
+
+# comparison run output (screenshots, diffs)
+compare/output/

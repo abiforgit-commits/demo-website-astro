@@ -1,0 +1,17 @@
+---
+type Props = {
+  href: string;
+  variant?: "brand" | "dark";
+};
+
+const { href, variant = "brand" } = Astro.props;
+const styles =
+  variant === "brand"
+    ? "bg-brand text-ink hover:bg-white"
+    : "bg-ink text-white hover:bg-white hover:text-ink";
+---
+
+<a
+  href={href}
+  class={`inline-flex items-center px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider transition-colors ${styles}`}
+><slot /></a>
